@@ -1,5 +1,6 @@
 {
   "expo": {
+    "main": "./index.js",
     "plugins": [
       [
         "@react-native-tvos/config-tv",
@@ -21,15 +22,17 @@
       "edgeToEdgeEnabled": true,
       "splash": {
         "image": "./assets/images/icon-1920x720.png"
-      }
+      },
+      "package": "com.maxattwell.DreamingTV"
     },
     "ios": {
       "splash": {
         "image": "./assets/images/icon-1920x720.png"
-      }
+      },
+      "bundleIdentifier": "com.maxattwell.DreamingTV"
     },
     "newArchEnabled": true,
-    "name": "DreamingTV2",
-    "slug": "DreamingTV2"
+    "name": "DreamingTV",
+    "slug": "DreamingTV"
   }
 }

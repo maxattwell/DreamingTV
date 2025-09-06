@@ -17,6 +17,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Native directories
+android/
+ios/
+
 # Metro
 .metro-health-check*
 
@@ -34,5 +38,12 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# TV specific
+*.tvos
+*.appletv
+
+# TV builds
+tv-build/
 
 app-example
