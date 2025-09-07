@@ -8,6 +8,8 @@ export interface DSVideo {
   difficultyScore?: number;
   hasAccess?: boolean;
   private?: boolean;
+  publishedAt?: string;
+  tags?: string[];
 }
 
 export interface VideoSources {

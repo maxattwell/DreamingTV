@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { DSVideo } from '../../../types';
 import { colors, typography, spacing } from '../../../styles';
 import { useVideos } from '../../../context';
 import VideoItem from '../VideoItem';
 import Button from '../../common/Button';
+import FiltersDrawer from '../FiltersDrawer';
 
 interface VideoListProps {
   onSelectVideo: (video: DSVideo) => void;
@@ -12,7 +13,13 @@ interface VideoListProps {
 }
 
 const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
-  const { videos, loading, error, fetchVideos } = useVideos();
+  const { videos, loading, error, fetchVideos, applyFilters, filters } = useVideos();
+  const [sortOption, setSortOption] = useState<string>(filters.sort);
+  const [selectedLevels, setSelectedLevels] = useState<string[]>(filters.level);
+  const [filtersVisible, setFiltersVisible] = useState(false);
+
+  const sortOptions = ['none', 'random', 'new', 'old', 'easy', 'hard', 'long', 'short'];
+  const levelOptions = ['advanced', 'beginner', 'intermediate', 'superbeginner'];
 
   useEffect(() => {
     if (videos.length === 0) {
@@ -20,8 +27,59 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     }
   }, []);
 
+  // Sync local state with context filters
+  useEffect(() => {
+    setSortOption(filters.sort);
+    setSelectedLevels(filters.level);
+  }, [filters]);
+
+  // Auto-apply filters when sort option changes
+  useEffect(() => {
+    if (sortOption !== filters.sort) {
+      applyFilters({
+        sort: sortOption,
+        level: selectedLevels
+      });
+    }
+  }, [sortOption]);
+
+  // Auto-apply filters when level selection changes
+  useEffect(() => {
+    if (JSON.stringify(selectedLevels) !== JSON.stringify(filters.level)) {
+      applyFilters({
+        sort: sortOption,
+        level: selectedLevels
+      });
+    }
+  }, [selectedLevels]);
+
   const handleRefresh = () => {
     fetchVideos();
+  };
+
+  const toggleLevel = (level: string) => {
+    const newLevels = selectedLevels.includes(level)
+      ? selectedLevels.filter(l => l !== level)
+      : [...selectedLevels, level];
+    setSelectedLevels(newLevels);
+  };
+
+  const getAppliedFiltersText = () => {
+    const filterParts = [];
+    
+    if (sortOption && sortOption !== 'none') {
+      filterParts.push(`Sort: ${sortOption}`);
+    }
+    
+    if (selectedLevels.length > 0) {
+      filterParts.push(`Level: ${selectedLevels.join(', ')}`);
+    }
+    
+    if (filterParts.length === 0) {
+      return 'Dreaming Spanish Videos';
+    }
+    
+    return `Dreaming Spanish Videos (${filterParts.join(' • ')})`;
   };
 
   if (loading) {
@@ -55,7 +113,21 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Dreaming Spanish Videos</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{getAppliedFiltersText()}</Text>
+        <View style={styles.headerActions}>
+          <Button 
+            onPress={() => setFiltersVisible(true)} 
+            variant="secondary" 
+            style={styles.filtersButton}
+          >
+            Filters
+          </Button>
+          <Button onPress={handleRefresh} variant="secondary" style={styles.refreshButton}>
+            Refresh
+          </Button>
+        </View>
+      </View>
       
       <FlatList
         data={videos}
@@ -65,6 +137,15 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={styles.row}
+      />
+
+      <FiltersDrawer
+        visible={filtersVisible}
+        onClose={() => setFiltersVisible(false)}
+        sortOption={sortOption}
+        setSortOption={setSortOption}
+        selectedLevels={selectedLevels}
+        toggleLevel={toggleLevel}
       />
     </View>
   );
@@ -83,12 +164,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.lg,
   },
+  header: {
+    marginBottom: spacing.lg,
+  },
   title: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'center',
   },
   gridContainer: {
     paddingBottom: spacing.lg,
@@ -107,6 +195,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'center',
+  },
+  filtersButton: {
+    minWidth: 80,
+  },
+  refreshButton: {
+    minWidth: 100,
   },
 });
 
