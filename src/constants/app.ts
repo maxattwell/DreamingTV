@@ -8,6 +8,7 @@ export const VIEWS = {
   DASHBOARD: 'dashboard',
   VIDEOS: 'videos', 
   PLAYER: 'player',
+  PROGRESS: 'progress',
 } as const;
 
 export const VIDEO_LEVELS = {

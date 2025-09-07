@@ -3,13 +3,15 @@ import { ViewType, DSVideo } from '../types';
 import { VIEWS } from '../constants';
 
 export const useNavigation = () => {
-  const [currentView, setCurrentView] = useState<ViewType>(VIEWS.DASHBOARD);
+  const [currentView, setCurrentView] = useState<ViewType>(VIEWS.PROGRESS);
   const [selectedVideo, setSelectedVideo] = useState<DSVideo | null>(null);
 
   const navigateTo = (view: ViewType, video?: DSVideo) => {
     setCurrentView(view);
     if (video) {
       setSelectedVideo(video);
+    } else {
+      setSelectedVideo(null);
     }
   };
 
@@ -23,6 +25,11 @@ export const useNavigation = () => {
     setSelectedVideo(null);
   };
 
+  const goToProgress = () => {
+    setCurrentView(VIEWS.PROGRESS);
+    setSelectedVideo(null);
+  };
+
   const goToPlayer = (video: DSVideo) => {
     setCurrentView(VIEWS.PLAYER);
     setSelectedVideo(video);
@@ -33,7 +40,7 @@ export const useNavigation = () => {
       setCurrentView(VIEWS.VIDEOS);
       setSelectedVideo(null);
     } else if (currentView === VIEWS.VIDEOS) {
-      setCurrentView(VIEWS.DASHBOARD);
+      setCurrentView(VIEWS.PROGRESS);
     }
   };
 
@@ -43,6 +50,7 @@ export const useNavigation = () => {
     navigateTo,
     goToDashboard,
     goToVideos,
+    goToProgress,
     goToPlayer,
     goBack,
   };

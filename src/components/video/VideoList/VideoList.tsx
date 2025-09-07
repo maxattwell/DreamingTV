@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { DSVideo } from '../../../types';
 import { colors, typography, spacing } from '../../../styles';
 import { useVideos } from '../../../context';
@@ -46,24 +46,26 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     );
   }
 
+  const renderVideoItem = ({ item }: { item: DSVideo }) => (
+    <VideoItem
+      video={item}
+      onPress={onSelectVideo}
+    />
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Dreaming Spanish Videos</Text>
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {videos.map((video) => (
-          <VideoItem
-            key={video.id}
-            video={video}
-            onPress={onSelectVideo}
-          />
-        ))}
-      </ScrollView>
-      
-      <View style={styles.bottomButtons}>
-        <Button onPress={handleRefresh}>Refresh</Button>
-        <Button onPress={onBack} variant="secondary">Back</Button>
-      </View>
+      <FlatList
+        data={videos}
+        renderItem={renderVideoItem}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        contentContainerStyle={styles.gridContainer}
+        showsVerticalScrollIndicator={false}
+        columnWrapperStyle={styles.row}
+      />
     </View>
   );
 };
@@ -88,9 +90,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
-  scrollView: {
-    flex: 1,
-    marginBottom: spacing.lg,
+  gridContainer: {
+    paddingBottom: spacing.lg,
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   error: {
     color: colors.error,
@@ -99,11 +104,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   buttonRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'center',
-  },
-  bottomButtons: {
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'center',

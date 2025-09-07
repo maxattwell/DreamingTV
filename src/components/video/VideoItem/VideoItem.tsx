@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { DSVideo } from '../../../types';
 import { colors, typography, spacing } from '../../../styles';
 import { formatDuration, capitalizeFirstLetter } from '../../../utils';
@@ -14,17 +14,41 @@ const VideoItem: React.FC<VideoItemProps> = ({ video, onPress }) => {
     onPress(video);
   };
 
+  const getLevelColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'superbeginner':
+        return '#4CAF50';
+      case 'beginner':
+        return '#8BC34A';
+      case 'intermediate':
+        return '#FF9800';
+      case 'advanced':
+        return '#F44336';
+      default:
+        return colors.textSecondary;
+    }
+  };
+
+  const thumbnailUrl = `https://d36f3pr6g3yfev.cloudfront.net/${video.id}.jpg`;
+
   return (
     <TouchableOpacity style={styles.container} onPress={handlePress}>
+      <Image 
+        source={{ uri: thumbnailUrl }}
+        style={styles.thumbnail}
+        resizeMode="cover"
+      />
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>
           {video.title}
         </Text>
         <View style={styles.metadata}>
           {video.level && (
-            <Text style={styles.level}>
-              {capitalizeFirstLetter(video.level)}
-            </Text>
+            <View style={[styles.levelBadge, { backgroundColor: getLevelColor(video.level) }]}>
+              <Text style={styles.level}>
+                {capitalizeFirstLetter(video.level)}
+              </Text>
+            </View>
           )}
           {video.duration && (
             <Text style={styles.duration}>
@@ -43,32 +67,46 @@ const VideoItem: React.FC<VideoItemProps> = ({ video, onPress }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.lightGray,
+    overflow: 'hidden',
+    width: '30%',
+    aspectRatio: 1.1,
+  },
+  thumbnail: {
+    width: '100%',
+    height: 120,
   },
   content: {
     flex: 1,
+    padding: spacing.sm,
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   metadata: {
     flexDirection: 'row',
-    gap: spacing.md,
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    alignItems: 'center',
+  },
+  levelBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
   },
   level: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
+    fontSize: typography.fontSize.xs,
+    color: 'white',
+    fontWeight: typography.fontWeight.bold,
   },
   duration: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
   },
   premium: {
