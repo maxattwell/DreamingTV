@@ -7,6 +7,7 @@ import { useAuth } from '../../../context';
 import Button from '../../common/Button';
 import WatchIcon from '../../common/WatchIcon';
 import ProgressIcon from '../../common/ProgressIcon';
+import SeriesIcon from '../../common/SeriesIcon';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -22,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
 
   const menuItems = [
     { view: VIEWS.VIDEOS, label: 'Watch', icon: 'watch', isSvg: true, color: '#FF69B4' },
+    { view: VIEWS.SERIES, label: 'Series', icon: 'series', isSvg: true, color: '#9C27B0' },
     { view: VIEWS.PROGRESS, label: 'Progress', icon: 'progress', isSvg: true, color: '#4A148C' },
   ];
 
@@ -43,6 +45,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
               {item.isSvg ? (
                 item.icon === 'watch' ? (
                   <WatchIcon 
+                    size={24} 
+                    color={item.color} 
+                  />
+                ) : item.icon === 'series' ? (
+                  <SeriesIcon 
                     size={24} 
                     color={item.color} 
                   />

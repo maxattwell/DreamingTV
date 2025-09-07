@@ -4,3 +4,4 @@ export * from './dashboard';
 export * from './video';
 export * from './progress';
 export * from './navigation';
+export * from './series';

@@ -3,3 +3,4 @@ export * from './video.types';
 export * from './progress.types';
 export * from './api.types';
 export * from './common.types';
+export * from './series.types';

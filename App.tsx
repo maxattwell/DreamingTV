@@ -1,15 +1,15 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
-import { AuthProvider, ProgressProvider, VideoProvider, useAuth } from './src/context';
-import { LoginForm, DashboardScreen, VideoList, VideoPlayer, ProgressScreen, Sidebar } from './src/components';
+import { AuthProvider, ProgressProvider, VideoProvider, SeriesProvider, useAuth } from './src/context';
+import { LoginForm, DashboardScreen, VideoList, VideoPlayer, ProgressScreen, Sidebar, SeriesList, SeriesDetail } from './src/components';
 import { useNavigation } from './src/hooks';
 import { VIEWS } from './src/constants';
 import { colors } from './src/styles';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const { currentView, selectedVideo, navigateTo, goToPlayer, goBack } = useNavigation();
+  const { currentView, selectedVideo, selectedSeries, navigateTo, goToPlayer, goToSeriesDetail, goBack } = useNavigation();
 
   const handleLoginSuccess = () => {
     navigateTo(VIEWS.PROGRESS);
@@ -35,6 +35,8 @@ const AppContent: React.FC = () => {
 
   // Main app layout with sidebar
   const renderMainContent = () => {
+    console.log('📱 App renderMainContent - currentView:', currentView);
+    
     switch (currentView) {
       case VIEWS.PROGRESS:
         return <ProgressScreen />;
@@ -45,6 +47,22 @@ const AppContent: React.FC = () => {
             onBack={goBack}
           />
         );
+      case VIEWS.SERIES:
+        console.log('📱 Rendering SeriesList component');
+        return (
+          <SeriesList
+            onSelectSeries={goToSeriesDetail}
+            onBack={goBack}
+          />
+        );
+      case VIEWS.SERIES_DETAIL:
+        return selectedSeries ? (
+          <SeriesDetail
+            series={selectedSeries}
+            onSelectVideo={goToPlayer}
+            onBack={goBack}
+          />
+        ) : <ProgressScreen />;
       case VIEWS.DASHBOARD:
         return (
           <DashboardScreen
@@ -76,7 +94,9 @@ const App: React.FC = () => {
       <AuthProvider>
         <ProgressProvider>
           <VideoProvider>
-            <AppContent />
+            <SeriesProvider>
+              <AppContent />
+            </SeriesProvider>
           </VideoProvider>
         </ProgressProvider>
       </AuthProvider>

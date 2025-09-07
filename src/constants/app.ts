@@ -7,6 +7,8 @@ export const APP_CONFIG = {
 export const VIEWS = {
   DASHBOARD: 'dashboard',
   VIDEOS: 'videos', 
+  SERIES: 'series',
+  SERIES_DETAIL: 'series-detail',
   PLAYER: 'player',
   PROGRESS: 'progress',
 } as const;

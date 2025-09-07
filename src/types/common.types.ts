@@ -12,9 +12,10 @@ export interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-export type ViewType = 'dashboard' | 'videos' | 'player';
+export type ViewType = 'dashboard' | 'videos' | 'series' | 'series-detail' | 'player' | 'progress';
 
 export interface NavigationState {
   currentView: ViewType;
   selectedVideo: any;
+  selectedSeries: any;
 }

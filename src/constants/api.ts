@@ -14,6 +14,9 @@ export const API_ENDPOINTS = {
   // Video endpoints
   VIDEOS: '/videos',
   VIDEO: '/video',
+
+    // Video endpoints
+  SERIES: '/series',
 } as const;
 
 export const HTTP_METHODS = {
