@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { VideoView } from 'expo-video';
 import { colors, typography, spacing } from '../../../styles';
@@ -12,6 +12,8 @@ interface VideoPlayerProps {
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, onBack }) => {
+  const [isFinishing, setIsFinishing] = useState(false);
+  
   const {
     loading,
     error,
@@ -25,8 +27,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, onBack }) => {
   } = useVideoPlayer(videoId);
 
   const handleFinish = async () => {
-    await logWatchTime();
-    onBack();
+    try {
+      setIsFinishing(true);
+      await logWatchTime();
+      onBack();
+    } catch (error) {
+      console.error('Error logging watch time:', error);
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   if (loading) {
@@ -86,7 +95,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, onBack }) => {
               {player.playing ? 'Pause' : 'Play'}
             </Button>
           )}
-          <Button onPress={handleFinish}>
+          <Button onPress={handleFinish} loading={isFinishing} disabled={isFinishing}>
             Finish & Log Time
           </Button>
           <Button onPress={onBack} variant="secondary">
