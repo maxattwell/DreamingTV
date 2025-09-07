@@ -5,6 +5,8 @@ import { VIEWS } from '../../../constants';
 import { ViewType } from '../../../types';
 import { useAuth } from '../../../context';
 import Button from '../../common/Button';
+import WatchIcon from '../../common/WatchIcon';
+import ProgressIcon from '../../common/ProgressIcon';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -19,8 +21,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   };
 
   const menuItems = [
-    { view: VIEWS.PROGRESS, label: 'Progress', icon: '📊' },
-    { view: VIEWS.VIDEOS, label: 'Watch', icon: '🎬' },
+    { view: VIEWS.VIDEOS, label: 'Watch', icon: 'watch', isSvg: true, color: '#FF69B4' },
+    { view: VIEWS.PROGRESS, label: 'Progress', icon: 'progress', isSvg: true, color: '#4A148C' },
   ];
 
   return (
@@ -33,11 +35,27 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
             key={item.view}
             style={[
               styles.menuItem,
-              currentView === item.view && styles.activeMenuItem
+              currentView === item.view && { ...styles.activeMenuItem, borderLeftColor: item.color }
             ]}
             onPress={() => onNavigate(item.view)}
           >
-            <Text style={styles.icon}>{item.icon}</Text>
+            <View style={styles.iconContainer}>
+              {item.isSvg ? (
+                item.icon === 'watch' ? (
+                  <WatchIcon 
+                    size={24} 
+                    color={item.color} 
+                  />
+                ) : (
+                  <ProgressIcon 
+                    size={24} 
+                    color={item.color} 
+                  />
+                )
+              ) : (
+                <Text style={styles.icon}>{item.icon}</Text>
+              )}
+            </View>
             <Text style={[
               styles.menuText,
               currentView === item.view && styles.activeMenuText
@@ -61,7 +79,6 @@ const styles = StyleSheet.create({
   container: {
     width: 200,
     backgroundColor: colors.surface,
-    padding: spacing.lg,
     justifyContent: 'space-between',
   },
   title: {
@@ -79,22 +96,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     marginBottom: spacing.sm,
-    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: 'transparent',
   },
-  activeMenuItem: {
-    backgroundColor: colors.primary,
+  iconContainer: {
+    width: 24,
+    height: 24,
+    marginRight: spacing.md,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   icon: {
     fontSize: 24,
-    marginRight: spacing.md,
   },
   menuText: {
     fontSize: typography.fontSize.lg,
-    color: colors.textPrimary,
+    color: '#000000',
     fontWeight: typography.fontWeight.medium,
   },
   activeMenuText: {
-    color: colors.background,
+    color: '#000000',
     fontWeight: typography.fontWeight.bold,
   },
   bottomSection: {

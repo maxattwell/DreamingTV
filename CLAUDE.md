@@ -8,11 +8,16 @@ DreamingTV is a React Native TV app built with Expo that supports both Apple TV 
 
 ## Development Commands
 
+### Package Management
+- **Use `pnpm`** for all package management operations (install, add, remove)
+- `pnpm install` - Install dependencies
+- `pnpm add <package>` - Add new dependencies
+
 ### Building and Running
-- `npm start` or `EXPO_TV=1 expo start` - Start the development server
-- `npm run android` or `EXPO_TV=1 expo run:android` - Build and run on Android TV
-- `npm run ios` or `EXPO_TV=1 expo run:ios` - Build and run on Apple TV
-- `npm run prebuild` or `EXPO_TV=1 expo prebuild --clean` - Prebuild native code for TV
+- `pnpm start` or `EXPO_TV=1 expo start` - Start the development server
+- `pnpm run android` or `EXPO_TV=1 expo run:android` - Build and run on Android TV
+- `pnpm run ios` or `EXPO_TV=1 expo run:ios` - Build and run on Apple TV
+- `pnpm run prebuild` or `EXPO_TV=1 expo prebuild --clean` - Prebuild native code for TV
 
 **Important**: Always set `EXPO_TV=1` environment variable to enable TV-specific configurations via the `@react-native-tvos/config-tv` plugin.
 
