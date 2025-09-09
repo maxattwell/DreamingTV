@@ -10,6 +10,7 @@ export interface DSVideo {
   private?: boolean;
   publishedAt?: string;
   tags?: string[];
+  seriesId?: string;
 }
 
 export interface VideoSources {

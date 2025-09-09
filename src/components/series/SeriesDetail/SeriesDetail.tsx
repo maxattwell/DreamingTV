@@ -6,6 +6,7 @@ import { DSVideo } from '../../../types/video.types';
 import { colors, typography, spacing } from '../../../styles';
 import Button from '../../common/Button';
 import ProgressBar from '../../common/ProgressBar';
+import VideoItem from '../../video/VideoItem';
 
 interface SeriesDetailProps {
   series: DSSeries;
@@ -23,12 +24,10 @@ const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, onSelectVideo, onBa
   }, []);
 
   const seriesVideos = useMemo(() => {
-    return allVideos.filter(video => 
-      video.tags && video.tags.some(tag => 
-        tag.toLowerCase().includes(series.title.toLowerCase()) || 
-        tag.toLowerCase().includes(series._id.toLowerCase())
-      )
-    );
+    const matchingVideos = allVideos.filter(video => video.seriesId === series._id);
+    console.log('🔍 SeriesDetail: Found', matchingVideos.length, 'videos for series', series._id);
+    
+    return matchingVideos;
   }, [allVideos, series]);
 
   const handleRetry = () => {
@@ -36,23 +35,10 @@ const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, onSelectVideo, onBa
   };
 
   const renderVideoItem = ({ item }: { item: DSVideo }) => (
-    <TouchableOpacity
-      style={styles.videoItem}
-      onPress={() => onSelectVideo(item)}
-    >
-      <View style={styles.videoContent}>
-        <Text style={styles.videoTitle}>{item.title}</Text>
-        <View style={styles.videoMetadata}>
-          <Text style={styles.metadataText}>Level: {item.level}</Text>
-          {item.duration && (
-            <Text style={styles.metadataText}>
-              Duration: {Math.floor(item.duration / 60)}:{(item.duration % 60).toString().padStart(2, '0')}
-            </Text>
-          )}
-        </View>
-        <ProgressBar progress={0} style={styles.progressBar} />
-      </View>
-    </TouchableOpacity>
+    <VideoItem
+      video={item}
+      onPress={onSelectVideo}
+    />
   );
 
   if (loading) {
@@ -101,13 +87,17 @@ const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, onSelectVideo, onBa
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={seriesVideos}
-          renderItem={renderVideoItem}
-          keyExtractor={(item) => item.id}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-        />
+        <>
+          <FlatList
+            data={seriesVideos}
+            renderItem={renderVideoItem}
+            keyExtractor={(item) => item.id}
+            numColumns={4}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            columnWrapperStyle={styles.row}
+          />
+        </>
       )}
     </View>
   );
@@ -168,6 +158,10 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.lg,
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   noVideosContainer: {
     flex: 1,

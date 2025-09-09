@@ -34,7 +34,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onFocusConte
               onNavigate(item.view);
               onFocusContent?.();
             }}
-            onFocus={() => onNavigate(item.view)}
           >
             <View style={styles.iconContainer}>
               {item.isSvg ? (

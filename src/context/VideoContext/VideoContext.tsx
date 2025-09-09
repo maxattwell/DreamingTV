@@ -50,10 +50,36 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const response = await videoApi.getVideos(token);
       
       console.log('📡 Raw API Response Sample:');
-      console.log('First 3 videos:', response.videos?.slice(0, 3).map(v => ({ _id: v._id, level: v.level, title: v.title })));
+      console.log('First 3 videos:', response.videos?.slice(0, 3).map(v => ({ _id: v._id, level: v.level, title: v.title, seriesId: v.seriesId })));
+      console.log('Videos with seriesId in raw data:', response.videos?.filter(v => v.seriesId).length);
       
-      const formattedVideos: DSVideo[] = (response.videos || [])
-        .filter((video: any) => video.hasAccess === true || video.private === false)
+      // Debug the filtering
+      const allRawVideos = response.videos || [];
+      console.log('🎯 Video Access Debug:');
+      console.log('Total raw videos:', allRawVideos.length);
+      
+      // Check specific series videos
+      const seriesVideos = allRawVideos.filter(v => v.seriesId === '6409a9e5112debe7aa739d59');
+      console.log(`Videos for series 6409a9e5112debe7aa739d59:`, seriesVideos.length);
+      if (seriesVideos.length > 0) {
+        console.log('Sample series video access:', seriesVideos[0] ? {
+          _id: seriesVideos[0]._id,
+          title: seriesVideos[0].title,
+          hasAccess: seriesVideos[0].hasAccess,
+          private: seriesVideos[0].private
+        } : 'none');
+      }
+      
+      const beforeFilter = allRawVideos.length;
+      // More inclusive filtering - include series videos even if access is restricted
+      const filteredRaw = allRawVideos.filter((video: any) => 
+        video.hasAccess === true || 
+        video.private === false || 
+        video.seriesId // Include all videos that belong to a series
+      );
+      console.log(`Access filtering: ${beforeFilter} -> ${filteredRaw.length} videos`);
+      
+      const formattedVideos: DSVideo[] = filteredRaw
         .map((video: any) => ({
           id: video._id,
           title: formatVideoTitle(video.title),
@@ -66,6 +92,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           private: video.private,
           publishedAt: video.publishedAt,
           tags: video.tags || [],
+          seriesId: video.seriesId,
         }));
 
       setAllVideos(formattedVideos);

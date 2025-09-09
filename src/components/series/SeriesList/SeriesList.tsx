@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useSeries } from '../../../context/SeriesContext';
 import { DSSeries } from '../../../types/series.types';
 import { colors, typography, spacing } from '../../../styles';
@@ -13,6 +13,41 @@ interface SeriesListProps {
 const SeriesList: React.FC<SeriesListProps> = ({ onSelectSeries, onBack }) => {
   const { series, loading, error, fetchSeries } = useSeries();
 
+  const seriesByLevel = useMemo(() => {
+    const grouped = series.reduce((acc, seriesItem) => {
+      const level = seriesItem.level;
+      if (!acc[level]) {
+        acc[level] = [];
+      }
+      acc[level].push(seriesItem);
+      return acc;
+    }, {} as Record<string, DSSeries[]>);
+    
+    // Define level order
+    const levelOrder = ['superbeginner', 'beginner', 'intermediate', 'advanced'];
+    
+    return levelOrder.reduce((orderedGroups, level) => {
+      if (grouped[level]) {
+        orderedGroups[level] = grouped[level];
+      }
+      return orderedGroups;
+    }, {} as Record<string, DSSeries[]>);
+  }, [series]);
+
+  const getLevelDisplayName = (level: string) => {
+    const levelNames = {
+      'superbeginner': 'Super Beginner',
+      'beginner': 'Beginner',
+      'intermediate': 'Intermediate',
+      'advanced': 'Advanced'
+    };
+    return levelNames[level as keyof typeof levelNames] || level;
+  };
+
+  const getSeriesImageUrl = (seriesId: string) => {
+    return `https://d36f3pr6g3yfev.cloudfront.net/series-${seriesId}-vertical.jpg`;
+  };
+
   useEffect(() => {
     if (series.length === 0) {
       fetchSeries();
@@ -23,23 +58,39 @@ const SeriesList: React.FC<SeriesListProps> = ({ onSelectSeries, onBack }) => {
     fetchSeries();
   };
 
-  const renderSeriesItem = ({ item }: { item: DSSeries }) => {
+  const renderSeriesItem = (item: DSSeries) => {
     return (
       <TouchableOpacity
+        key={item._id}
         style={styles.seriesItem}
         onPress={() => onSelectSeries(item)}
       >
-        <View style={styles.seriesContent}>
-          <Text style={styles.seriesTitle}>{item.title}</Text>
-          <Text style={styles.seriesDescription} numberOfLines={2}>
-            {item.description}
+        <Image
+          source={{ uri: getSeriesImageUrl(item._id) }}
+          style={styles.seriesImage}
+          resizeMode="cover"
+        />
+        <View style={styles.fallbackContainer}>
+          <Text style={styles.fallbackTitle} numberOfLines={3}>
+            {item.title}
           </Text>
-          <View style={styles.seriesMetadata}>
-            <Text style={styles.metadataText}>Level: {item.level}</Text>
-            <Text style={styles.metadataText}>Episodes: {item.numberOfEpisodes}</Text>
-          </View>
         </View>
       </TouchableOpacity>
+    );
+  };
+
+  const renderLevelSection = (level: string, seriesItems: DSSeries[]) => {
+    return (
+      <View key={level} style={styles.levelSection}>
+        <Text style={styles.levelTitle}>{getLevelDisplayName(level)}</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScrollContent}
+        >
+          {seriesItems.map(renderSeriesItem)}
+        </ScrollView>
+      </View>
     );
   };
 
@@ -74,16 +125,19 @@ const SeriesList: React.FC<SeriesListProps> = ({ onSelectSeries, onBack }) => {
         </Button>
       </View>
       
-      <FlatList
-        data={series}
-        renderItem={renderSeriesItem}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.listContent}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() => {
-          return <Text style={styles.loadingText}>No series found</Text>;
-        }}
-      />
+      >
+        {Object.entries(seriesByLevel).length === 0 ? (
+          <Text style={styles.loadingText}>No series found</Text>
+        ) : (
+          Object.entries(seriesByLevel).map(([level, seriesItems]) =>
+            renderLevelSection(level, seriesItems)
+          )
+        )}
+      </ScrollView>
     </View>
   );
 };
@@ -117,48 +171,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  listContent: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: spacing.lg,
   },
-  seriesItem: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  levelSection: {
+    marginBottom: spacing.xl,
   },
-  seriesContent: {
-    padding: spacing.lg,
-  },
-  seriesTitle: {
-    fontSize: typography.fontSize.lg,
+  levelTitle: {
+    fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  seriesDescription: {
-    fontSize: typography.fontSize.md,
-    color: colors.textSecondary,
-    lineHeight: 20,
     marginBottom: spacing.md,
+    marginLeft: spacing.sm,
   },
-  seriesMetadata: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  horizontalScrollContent: {
+    paddingHorizontal: spacing.sm,
   },
-  metadataText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+  seriesItem: {
+    marginRight: spacing.md,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  seriesImage: {
+    width: 160,
+    height: 240,
+  },
+  fallbackContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.md,
+    zIndex: -1,
+  },
+  fallbackTitle: {
+    fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   loadingText: {
     fontSize: typography.fontSize.lg,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: spacing.xl,
   },
   errorText: {
     fontSize: typography.fontSize.lg,
