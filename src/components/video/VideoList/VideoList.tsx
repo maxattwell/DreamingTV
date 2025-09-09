@@ -133,7 +133,7 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
         data={videos}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item.id}
-        numColumns={3}
+        numColumns={4}
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={styles.row}

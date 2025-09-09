@@ -19,30 +19,42 @@ export const useVideoPlayer = (videoId: string) => {
   });
   
   const [videoData, setVideoData] = useState<any>(null);
+  const hasAutoPlayedRef = useRef(false);
   
   // Construct the video URL
   const bunnyVideoUrl = videoData?.video?.sources?.bunny || null;
   const m3u8Url = bunnyVideoUrl ? `${bunnyVideoUrl}/playlist.m3u8` : null;
   const title = videoData?.video?.title || '';
 
-  const player = useExpoVideoPlayer(m3u8Url || '', player => {
-    player.loop = false;
-    player.addListener('playbackStatusUpdate', (status) => {
-      setPlayerState(prev => ({
-        ...prev,
-        isPlaying: status.isLoaded ? player.playing : false,
-        currentTime: status.positionMillis ? status.positionMillis / 1000 : 0,
-        duration: status.durationMillis ? status.durationMillis / 1000 : 0,
-      }));
-    });
+  const player = useExpoVideoPlayer(m3u8Url, player => {
+    if (player) {
+      player.loop = false;
+      player.addListener('playbackStatusUpdate', (status) => {
+        setPlayerState(prev => ({
+          ...prev,
+          isPlaying: status.isLoaded ? player.playing : false,
+          currentTime: status.positionMillis ? status.positionMillis / 1000 : 0,
+          duration: status.durationMillis ? status.durationMillis / 1000 : 0,
+        }));
+        
+        // Auto-play when video is loaded for the first time
+        if (status.isLoaded && !hasAutoPlayedRef.current && !player.playing) {
+          hasAutoPlayedRef.current = true;
+          player.play();
+        }
+      });
+    }
   });
 
   useEffect(() => {
+    hasAutoPlayedRef.current = false; // Reset autoplay flag for new video
     fetchVideoDetails();
   }, [videoId]);
 
   // Track watched time
   useEffect(() => {
+    if (!player) return;
+    
     const interval = setInterval(() => {
       if (player.currentTime) {
         const currentSeconds = Math.floor(player.currentTime);
@@ -75,6 +87,8 @@ export const useVideoPlayer = (videoId: string) => {
   };
 
   const togglePlayback = () => {
+    if (!player) return;
+    
     if (player.playing) {
       player.pause();
     } else {

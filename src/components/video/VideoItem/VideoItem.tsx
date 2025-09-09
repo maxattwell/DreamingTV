@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.lightGray,
     overflow: 'hidden',
-    width: '30%',
+    width: '24%',
     aspectRatio: 1.1,
   },
   thumbnail: {

@@ -1,10 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography } from '../../../styles';
+import { colors, spacing } from '../../../styles';
 import { VIEWS } from '../../../constants';
 import { ViewType } from '../../../types';
-import { useAuth } from '../../../context';
-import Button from '../../common/Button';
 import WatchIcon from '../../common/WatchIcon';
 import ProgressIcon from '../../common/ProgressIcon';
 import SeriesIcon from '../../common/SeriesIcon';
@@ -12,15 +10,10 @@ import SeriesIcon from '../../common/SeriesIcon';
 interface SidebarProps {
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
+  onFocusContent?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
-  const { logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-  };
-
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onFocusContent }) => {
   const menuItems = [
     { view: VIEWS.VIDEOS, label: 'Watch', icon: 'watch', isSvg: true, color: '#FF69B4' },
     { view: VIEWS.SERIES, label: 'Series', icon: 'series', isSvg: true, color: '#9C27B0' },
@@ -29,8 +22,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>DreamingTV</Text>
-      
       <View style={styles.menuContainer}>
         {menuItems.map((item) => (
           <TouchableOpacity
@@ -39,7 +30,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
               styles.menuItem,
               currentView === item.view && { ...styles.activeMenuItem, borderLeftColor: item.color }
             ]}
-            onPress={() => onNavigate(item.view)}
+            onPress={() => {
+              onNavigate(item.view);
+              onFocusContent?.();
+            }}
+            onFocus={() => onNavigate(item.view)}
           >
             <View style={styles.iconContainer}>
               {item.isSvg ? (
@@ -63,20 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
                 <Text style={styles.icon}>{item.icon}</Text>
               )}
             </View>
-            <Text style={[
-              styles.menuText,
-              currentView === item.view && styles.activeMenuText
-            ]}>
-              {item.label}
-            </Text>
           </TouchableOpacity>
         ))}
-      </View>
-
-      <View style={styles.bottomSection}>
-        <Button onPress={handleLogout} variant="secondary">
-          Logout
-        </Button>
       </View>
     </View>
   );
@@ -84,19 +67,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
 
 const styles = StyleSheet.create({
   container: {
-    width: 200,
+    width: 60,
     backgroundColor: colors.surface,
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
+    justifyContent: 'center',
   },
   menuContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   menuItem: {
     flexDirection: 'row',
@@ -106,27 +83,17 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: 'transparent',
   },
+  activeMenuItem: {
+    borderLeftWidth: 4,
+  },
   iconContainer: {
     width: 24,
     height: 24,
-    marginRight: spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
     fontSize: 24,
-  },
-  menuText: {
-    fontSize: typography.fontSize.lg,
-    color: '#000000',
-    fontWeight: typography.fontWeight.medium,
-  },
-  activeMenuText: {
-    color: '#000000',
-    fontWeight: typography.fontWeight.bold,
-  },
-  bottomSection: {
-    marginTop: spacing.xl,
   },
 });
 
