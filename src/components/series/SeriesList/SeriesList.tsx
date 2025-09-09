@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useSeries } from '../../../context/SeriesContext';
 import { DSSeries } from '../../../types/series.types';
@@ -12,6 +12,10 @@ interface SeriesListProps {
 
 const SeriesList: React.FC<SeriesListProps> = ({ onSelectSeries, onBack }) => {
   const { series, loading, error, fetchSeries } = useSeries();
+  const [displayedSeriesPerLevel, setDisplayedSeriesPerLevel] = useState<Record<string, number>>({});
+  const [loadingMoreLevel, setLoadingMoreLevel] = useState<string | null>(null);
+  
+  const SERIES_PER_PAGE = 6;
 
   const seriesByLevel = useMemo(() => {
     const grouped = series.reduce((acc, seriesItem) => {
@@ -33,6 +37,29 @@ const SeriesList: React.FC<SeriesListProps> = ({ onSelectSeries, onBack }) => {
       return orderedGroups;
     }, {} as Record<string, DSSeries[]>);
   }, [series]);
+
+  // Initialize displayed counts for each level
+  useEffect(() => {
+    const initialCounts: Record<string, number> = {};
+    Object.keys(seriesByLevel).forEach(level => {
+      initialCounts[level] = SERIES_PER_PAGE;
+    });
+    setDisplayedSeriesPerLevel(initialCounts);
+  }, [seriesByLevel]);
+
+  const loadMoreForLevel = async (level: string) => {
+    if (loadingMoreLevel) return;
+    
+    setLoadingMoreLevel(level);
+    // Simulate network delay for smooth UX
+    setTimeout(() => {
+      setDisplayedSeriesPerLevel(prev => ({
+        ...prev,
+        [level]: (prev[level] || SERIES_PER_PAGE) + SERIES_PER_PAGE
+      }));
+      setLoadingMoreLevel(null);
+    }, 300);
+  };
 
   const getLevelDisplayName = (level: string) => {
     const levelNames = {
@@ -80,15 +107,37 @@ const SeriesList: React.FC<SeriesListProps> = ({ onSelectSeries, onBack }) => {
   };
 
   const renderLevelSection = (level: string, seriesItems: DSSeries[]) => {
+    const displayedCount = displayedSeriesPerLevel[level] || SERIES_PER_PAGE;
+    const displayedItems = seriesItems.slice(0, displayedCount);
+    const hasMore = displayedItems.length < seriesItems.length;
+    const isLoadingThisLevel = loadingMoreLevel === level;
+
     return (
       <View key={level} style={styles.levelSection}>
-        <Text style={styles.levelTitle}>{getLevelDisplayName(level)}</Text>
+        <View style={styles.levelHeader}>
+          <Text style={styles.levelTitle}>
+            {getLevelDisplayName(level)} ({displayedItems.length}/{seriesItems.length})
+          </Text>
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScrollContent}
         >
-          {seriesItems.map(renderSeriesItem)}
+          {displayedItems.map(renderSeriesItem)}
+          {hasMore && (
+            <TouchableOpacity
+              style={styles.loadMoreCard}
+              onPress={() => loadMoreForLevel(level)}
+              disabled={isLoadingThisLevel}
+            >
+              <View style={styles.loadMoreContent}>
+                <Text style={styles.loadMoreText}>
+                  {isLoadingThisLevel ? 'Loading...' : `Load More\n(${seriesItems.length - displayedItems.length} remaining)`}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </View>
     );
@@ -180,12 +229,14 @@ const styles = StyleSheet.create({
   levelSection: {
     marginBottom: spacing.xl,
   },
+  levelHeader: {
+    marginBottom: spacing.md,
+    marginLeft: spacing.sm,
+  },
   levelTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    marginBottom: spacing.md,
-    marginLeft: spacing.sm,
   },
   horizontalScrollContent: {
     paddingHorizontal: spacing.sm,
@@ -240,6 +291,29 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: spacing.sm,
+  },
+  loadMoreCard: {
+    marginRight: spacing.md,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    opacity: 0.7,
+  },
+  loadMoreContent: {
+    width: 160,
+    height: 240,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+  },
+  loadMoreText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
 

@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { DSSeries, SeriesListState } from '../../types/series.types';
 import { seriesApi } from '../../services/api/series.api';
+import { storageService } from '../../services';
 import { useAuth } from '../AuthContext';
 
 interface SeriesContextType extends SeriesListState {
-  fetchSeries: () => Promise<void>;
+  fetchSeries: (forceRefresh?: boolean) => Promise<void>;
   clearSeries: () => void;
+  refreshData: () => Promise<void>;
 }
 
 const SeriesContext = createContext<SeriesContextType | undefined>(undefined);
@@ -19,14 +21,44 @@ export const SeriesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
   const [hasFetched, setHasFetched] = useState(false);
 
-  const fetchSeries = useCallback(async () => {
+  // Load series from storage on initialization
+  useEffect(() => {
+    if (token && seriesState.series.length === 0 && !hasFetched) {
+      loadSeriesFromStorage();
+    }
+  }, [token]);
+
+  const loadSeriesFromStorage = async () => {
+    try {
+      const cachedSeries = await storageService.getSeriesData();
+      const timestamp = await storageService.getSeriesTimestamp();
+      
+      if (cachedSeries && !storageService.isCacheExpired(timestamp)) {
+        console.log('📦 Loading series from cache');
+        setSeriesState({
+          series: cachedSeries,
+          loading: false,
+          error: null,
+        });
+        setHasFetched(true);
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading cached series:', error);
+    }
+
+    // If no valid cache, fetch from API
+    await fetchSeries(true);
+  };
+
+  const fetchSeries = useCallback(async (forceRefresh: boolean = false) => {
     if (!token) {
       setSeriesState(prev => ({ ...prev, error: 'No authentication token' }));
       return;
     }
 
-    // Don't refetch if we already have data
-    if (hasFetched && seriesState.series.length > 0) {
+    // Don't refetch if we already have data unless forcing refresh
+    if (hasFetched && seriesState.series.length > 0 && !forceRefresh) {
       return;
     }
 
@@ -35,9 +67,13 @@ export const SeriesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       const response = await seriesApi.getSeries(token);
+      const series = response.series || [];
+
+      // Store in cache
+      await storageService.setSeriesData(series);
 
       setSeriesState({
-        series: response.series || [],
+        series,
         loading: false,
         error: null,
       });
@@ -49,7 +85,7 @@ export const SeriesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         error: 'Failed to fetch series',
       });
     }
-  }, [token, hasFetched]);
+  }, [token, hasFetched, seriesState.series.length]);
 
   const clearSeries = () => {
     setSeriesState({
@@ -60,10 +96,16 @@ export const SeriesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setHasFetched(false);
   };
 
+  const refreshData = async () => {
+    console.log('🔄 Refreshing series data');
+    await fetchSeries(true);
+  };
+
   const value: SeriesContextType = {
     ...seriesState,
     fetchSeries,
     clearSeries,
+    refreshData,
   };
 
   return (

@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { DSVideo, VideoListState } from '../../types';
-import { videoApi } from '../../services';
+import { videoApi, storageService } from '../../services';
 import { useAuth } from '../AuthContext';
 import { formatVideoTitle } from '../../utils';
 
@@ -12,10 +12,11 @@ interface FilterOptions {
 interface VideoContextType extends VideoListState {
   allVideos: DSVideo[];
   filters: FilterOptions;
-  fetchVideos: () => Promise<void>;
+  fetchVideos: (forceRefresh?: boolean) => Promise<void>;
   applyFilters: (filters: FilterOptions) => void;
   clearVideos: () => void;
   getVideoById: (videoId: string) => Promise<any>;
+  refreshData: () => Promise<void>;
 }
 
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
@@ -33,14 +34,45 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     error: null,
   });
 
-  const fetchVideos = async () => {
+  // Load videos from storage on initialization
+  useEffect(() => {
+    if (token && allVideos.length === 0) {
+      loadVideosFromStorage();
+    }
+  }, [token]);
+
+  const loadVideosFromStorage = async () => {
+    try {
+      const cachedVideos = await storageService.getVideosData();
+      const timestamp = await storageService.getVideosTimestamp();
+      
+      if (cachedVideos && !storageService.isCacheExpired(timestamp)) {
+        console.log('📦 Loading videos from cache');
+        setAllVideos(cachedVideos);
+        const filteredAndSorted = applySortingAndFiltering(cachedVideos, filters);
+        setVideoState({
+          videos: filteredAndSorted,
+          loading: false,
+          error: null,
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading cached videos:', error);
+    }
+
+    // If no valid cache, fetch from API
+    await fetchVideos(true);
+  };
+
+  const fetchVideos = async (forceRefresh: boolean = false) => {
     if (!token) {
       setVideoState(prev => ({ ...prev, error: 'No authentication token' }));
       return;
     }
 
-    // Don't refetch if we already have videos
-    if (allVideos.length > 0) {
+    // Don't refetch if we already have videos unless forcing refresh
+    if (allVideos.length > 0 && !forceRefresh) {
       return;
     }
 
@@ -95,6 +127,9 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           seriesId: video.seriesId,
         }));
 
+      // Store in cache
+      await storageService.setVideosData(formattedVideos);
+      
       setAllVideos(formattedVideos);
       
       // Apply current filters to the newly loaded data
@@ -202,6 +237,11 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
+  const refreshData = async () => {
+    console.log('🔄 Refreshing videos data');
+    await fetchVideos(true);
+  };
+
   const value: VideoContextType = {
     ...videoState,
     allVideos,
@@ -210,6 +250,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     applyFilters,
     clearVideos,
     getVideoById,
+    refreshData,
   };
 
   return (

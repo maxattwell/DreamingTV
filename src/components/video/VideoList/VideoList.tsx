@@ -17,6 +17,11 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
   const [sortOption, setSortOption] = useState<string>(filters.sort);
   const [selectedLevels, setSelectedLevels] = useState<string[]>(filters.level);
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [displayedVideos, setDisplayedVideos] = useState<DSVideo[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
+  const ITEMS_PER_PAGE = 20;
 
   const sortOptions = ['none', 'random', 'new', 'old', 'easy', 'hard', 'long', 'short'];
   const levelOptions = ['advanced', 'beginner', 'intermediate', 'superbeginner'];
@@ -26,6 +31,18 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
       fetchVideos();
     }
   }, []);
+
+  // Update displayed videos when videos or page changes
+  useEffect(() => {
+    const startIndex = 0;
+    const endIndex = currentPage * ITEMS_PER_PAGE;
+    setDisplayedVideos(videos.slice(startIndex, endIndex));
+  }, [videos, currentPage]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   // Sync local state with context filters
   useEffect(() => {
@@ -57,6 +74,19 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     fetchVideos();
   };
 
+  const loadMore = async () => {
+    if (loadingMore || displayedVideos.length >= videos.length) {
+      return;
+    }
+
+    setLoadingMore(true);
+    // Simulate network delay for smooth UX
+    setTimeout(() => {
+      setCurrentPage(prev => prev + 1);
+      setLoadingMore(false);
+    }, 300);
+  };
+
   const toggleLevel = (level: string) => {
     const newLevels = selectedLevels.includes(level)
       ? selectedLevels.filter(l => l !== level)
@@ -75,11 +105,15 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
       filterParts.push(`Level: ${selectedLevels.join(', ')}`);
     }
     
-    if (filterParts.length === 0) {
-      return 'Dreaming Spanish Videos';
-    }
-    
-    return `Dreaming Spanish Videos (${filterParts.join(' • ')})`;
+    const baseText = filterParts.length === 0 
+      ? 'Dreaming Spanish Videos' 
+      : `Dreaming Spanish Videos (${filterParts.join(' • ')})`;
+      
+    const countText = videos.length > 0 
+      ? ` (${displayedVideos.length}/${videos.length})`
+      : '';
+      
+    return baseText + countText;
   };
 
   if (loading) {
@@ -130,13 +164,31 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
       </View>
       
       <FlatList
-        data={videos}
+        data={displayedVideos}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item.id}
         numColumns={4}
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={styles.row}
+        ListFooterComponent={() => (
+          displayedVideos.length < videos.length ? (
+            <View style={styles.loadMoreContainer}>
+              <Button 
+                onPress={loadMore} 
+                loading={loadingMore}
+                variant="secondary"
+                style={styles.loadMoreButton}
+              >
+                {loadingMore ? 'Loading...' : `Load More (${videos.length - displayedVideos.length} remaining)`}
+              </Button>
+            </View>
+          ) : videos.length > 0 ? (
+            <View style={styles.endContainer}>
+              <Text style={styles.endText}>All videos loaded ({videos.length} total)</Text>
+            </View>
+          ) : null
+        )}
       />
 
       <FiltersDrawer
@@ -201,6 +253,22 @@ const styles = StyleSheet.create({
   },
   refreshButton: {
     minWidth: 100,
+  },
+  loadMoreContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  loadMoreButton: {
+    paddingHorizontal: spacing.xl,
+  },
+  endContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  endText: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    textAlign: 'center',
   },
 });
 

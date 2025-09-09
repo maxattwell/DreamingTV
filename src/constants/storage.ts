@@ -4,6 +4,10 @@ export const STORAGE_KEYS = {
   CURRENT_MINUTES: 'currentMinutes',
   GOAL_REACHED: 'goalReached',
   DATE_STRING: 'dateString',
+  VIDEOS_DATA: 'videosData',
+  VIDEOS_TIMESTAMP: 'videosTimestamp',
+  SERIES_DATA: 'seriesData',
+  SERIES_TIMESTAMP: 'seriesTimestamp',
 } as const;
 
 export const DEFAULT_VALUES = {

@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { colors, spacing, typography } from '../../../styles';
-import { useProgress } from '../../../context';
+import { useProgress, useVideos, useSeries } from '../../../context';
 import ProgressCard from '../../dashboard/ProgressCard';
 import Button from '../../common/Button';
 
 const ProgressScreen: React.FC = () => {
   const { currentMinutes, goalMinutes, goalReached, refreshProgress } = useProgress();
+  const { refreshData: refreshVideos } = useVideos();
+  const { refreshData: refreshSeries } = useSeries();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refreshProgress();
-    setRefreshing(false);
+    try {
+      // Refresh all data in parallel
+      await Promise.all([
+        refreshProgress(),
+        refreshVideos(),
+        refreshSeries(),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -27,7 +39,7 @@ const ProgressScreen: React.FC = () => {
       
       <View style={styles.buttonContainer}>
         <Button onPress={handleRefresh} loading={refreshing}>
-          Refresh Progress
+          Refresh Data
         </Button>
       </View>
     </View>
