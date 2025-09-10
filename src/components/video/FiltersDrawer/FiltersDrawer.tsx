@@ -10,6 +10,10 @@ interface FiltersDrawerProps {
   setSortOption: (option: string) => void;
   selectedLevels: string[];
   toggleLevel: (level: string) => void;
+  premiumFilter: boolean | null;
+  setPremiumFilter: (filter: boolean | null) => void;
+  selectedGuides: string[];
+  toggleGuide: (guide: string) => void;
 }
 
 const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
@@ -19,9 +23,19 @@ const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
   setSortOption,
   selectedLevels,
   toggleLevel,
+  premiumFilter,
+  setPremiumFilter,
+  selectedGuides,
+  toggleGuide,
 }) => {
   const sortOptions = ['none', 'random', 'new', 'old', 'easy', 'hard', 'long', 'short'];
   const levelOptions = ['advanced', 'beginner', 'intermediate', 'superbeginner'];
+  const premiumOptions = [
+    { value: null, label: 'All' },
+    { value: false, label: 'Free' },
+    { value: true, label: 'Premium' }
+  ];
+  const guideOptions = ['Abraham', 'Adam', 'Adrià', 'Agustina', 'Aitana', 'Alan', 'Alejandro', 'Alexandra', 'Alfonso', 'Alfredo', 'Alma', 'Almudena', 'Amey', 'Analía', 'Andrea', 'Andrés', 'Andrés H.', 'Bernardo', 'Betsy', 'Betsy C.', 'Bianncka', 'Camilo', 'Carolina', 'César', 'Claudia', 'David & Adrián', 'Débora', 'Edgar', 'Edwin', 'Elías', 'Enrique', 'Ester', 'Fátima', 'How to Spanish', 'Ian', 'Isabel', 'Iván', 'Javier', 'Jose María', 'Jostin', 'Juan', 'Judit', 'Karlos', 'Laura', 'Lorena', 'Lorena O.', 'Marce', 'María', 'María del Mar', 'Marifer', 'Marinés', 'Mariona', 'Mauricio', 'Maximiliano', 'Michelle', 'Montserrat', 'Nacho', 'Natalia', 'Niolberth', 'Núria', 'Pablo', "Pablo's mom", 'Pati', 'Pilar', 'Rafael', 'Ramón', 'Ricardo', 'Ricardo R.', 'Rocío', 'Sandra', 'Sergio', 'Shelcin', 'Sofía', 'Sonia & Alberto', 'Tamara', 'Tere', 'Tomás', 'Toni', 'Valeria', 'Victoria'];
 
   return (
     <Modal
@@ -67,6 +81,38 @@ const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
                     style={styles.filterButton}
                   >
                     {level}
+                  </Button>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterLabel}>Content:</Text>
+              <View style={styles.optionsGrid}>
+                {premiumOptions.map((option) => (
+                  <Button
+                    key={String(option.value)}
+                    onPress={() => setPremiumFilter(option.value)}
+                    variant={premiumFilter === option.value ? 'primary' : 'secondary'}
+                    style={styles.filterButton}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterLabel}>Guide:</Text>
+              <View style={styles.optionsGrid}>
+                {guideOptions.map((guide) => (
+                  <Button
+                    key={guide}
+                    onPress={() => toggleGuide(guide)}
+                    variant={selectedGuides.includes(guide) ? 'primary' : 'secondary'}
+                    style={styles.filterButton}
+                  >
+                    {guide}
                   </Button>
                 ))}
               </View>

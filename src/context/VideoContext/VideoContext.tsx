@@ -7,6 +7,8 @@ import { formatVideoTitle } from '../../utils';
 interface FilterOptions {
   sort: string;
   level: string[];
+  premium: boolean | null; // null = all, true = premium only, false = free only
+  guide: string[]; // array of guide names to filter by
 }
 
 interface VideoContextType extends VideoListState {
@@ -21,12 +23,15 @@ interface VideoContextType extends VideoListState {
 
 const VideoContext = createContext<VideoContextType | undefined>(undefined);
 
+
 export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
   const [allVideos, setAllVideos] = useState<DSVideo[]>([]);
   const [filters, setFilters] = useState<FilterOptions>({
     sort: 'none',
-    level: []
+    level: [],
+    premium: null,
+    guide: []
   });
   const [videoState, setVideoState] = useState<VideoListState>({
     videos: [],
@@ -46,7 +51,11 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const cachedVideos = await storageService.getVideosData();
       const timestamp = await storageService.getVideosTimestamp();
       
-      if (cachedVideos && !storageService.isCacheExpired(timestamp)) {
+      // Check if cached videos have guides field - if not, force refresh
+      const hasGuidesField = cachedVideos && cachedVideos.length > 0 && 
+        cachedVideos.some(video => video.guides !== undefined);
+      
+      if (cachedVideos && !storageService.isCacheExpired(timestamp) && hasGuidesField) {
         console.log('📦 Loading videos from cache');
         setAllVideos(cachedVideos);
         const filteredAndSorted = applySortingAndFiltering(cachedVideos, filters);
@@ -56,6 +65,8 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           error: null,
         });
         return;
+      } else if (!hasGuidesField) {
+        console.log('🔄 Cache missing guides field, forcing refresh');
       }
     } catch (error) {
       console.error('Error loading cached videos:', error);
@@ -82,7 +93,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const response = await videoApi.getVideos(token);
       
       console.log('📡 Raw API Response Sample:');
-      console.log('First 3 videos:', response.videos?.slice(0, 3).map(v => ({ _id: v._id, level: v.level, title: v.title, seriesId: v.seriesId })));
+      console.log('First 3 videos:', response.videos?.slice(0, 3).map(v => ({ _id: v._id, level: v.level, title: v.title, seriesId: v.seriesId, guides: v.guides })));
       console.log('Videos with seriesId in raw data:', response.videos?.filter(v => v.seriesId).length);
       
       // Debug the filtering
@@ -125,6 +136,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           publishedAt: video.publishedAt,
           tags: video.tags || [],
           seriesId: video.seriesId,
+          guides: video.guides || [],
         }));
 
       // Store in cache
@@ -182,6 +194,33 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.log('Selected levels:', filterOptions.level);
       console.log('Unique levels in data:', [...new Set(videos.map(v => v.level))]);
     }
+
+    // Apply premium filtering
+    if (filterOptions.premium !== null) {
+      const beforeFilter = filtered.length;
+      filtered = filtered.filter(video => {
+        // Premium videos are those that require access (hasAccess === false means it's premium content)
+        const isPremium = video.hasAccess === false || video.private === true;
+        return filterOptions.premium ? isPremium : !isPremium;
+      });
+      console.log(`Premium filtering: ${beforeFilter} -> ${filtered.length} videos`);
+      console.log('Premium filter mode:', filterOptions.premium ? 'premium only' : 'free only');
+    }
+
+    // Apply guide filtering
+    if (filterOptions.guide.length > 0) {
+      const beforeFilter = filtered.length;
+      filtered = filtered.filter(video => {
+        const videoGuides = video.guides || [];
+        return filterOptions.guide.some(selectedGuide => 
+          videoGuides.includes(selectedGuide)
+        );
+      });
+      console.log(`Guide filtering: ${beforeFilter} -> ${filtered.length} videos`);
+      console.log('Selected guides:', filterOptions.guide);
+      console.log('Unique guides in data:', [...new Set(videos.flatMap(v => v.guides || []))]);
+    }
+    
     
     // Apply sorting
     switch (filterOptions.sort) {

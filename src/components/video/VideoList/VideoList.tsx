@@ -16,6 +16,8 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
   const { videos, loading, error, fetchVideos, applyFilters, filters } = useVideos();
   const [sortOption, setSortOption] = useState<string>(filters.sort);
   const [selectedLevels, setSelectedLevels] = useState<string[]>(filters.level);
+  const [premiumFilter, setPremiumFilter] = useState<boolean | null>(filters.premium);
+  const [selectedGuides, setSelectedGuides] = useState<string[]>(filters.guide);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [displayedVideos, setDisplayedVideos] = useState<DSVideo[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,6 +50,8 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
   useEffect(() => {
     setSortOption(filters.sort);
     setSelectedLevels(filters.level);
+    setPremiumFilter(filters.premium);
+    setSelectedGuides(filters.guide);
   }, [filters]);
 
   // Auto-apply filters when sort option changes
@@ -55,7 +59,9 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     if (sortOption !== filters.sort) {
       applyFilters({
         sort: sortOption,
-        level: selectedLevels
+        level: selectedLevels,
+        premium: premiumFilter,
+        guide: selectedGuides
       });
     }
   }, [sortOption]);
@@ -65,10 +71,36 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     if (JSON.stringify(selectedLevels) !== JSON.stringify(filters.level)) {
       applyFilters({
         sort: sortOption,
-        level: selectedLevels
+        level: selectedLevels,
+        premium: premiumFilter,
+        guide: selectedGuides
       });
     }
   }, [selectedLevels]);
+
+  // Auto-apply filters when premium filter changes
+  useEffect(() => {
+    if (premiumFilter !== filters.premium) {
+      applyFilters({
+        sort: sortOption,
+        level: selectedLevels,
+        premium: premiumFilter,
+        guide: selectedGuides
+      });
+    }
+  }, [premiumFilter]);
+
+  // Auto-apply filters when guide selection changes
+  useEffect(() => {
+    if (JSON.stringify(selectedGuides) !== JSON.stringify(filters.guide)) {
+      applyFilters({
+        sort: sortOption,
+        level: selectedLevels,
+        premium: premiumFilter,
+        guide: selectedGuides
+      });
+    }
+  }, [selectedGuides]);
 
   const handleRefresh = () => {
     fetchVideos();
@@ -94,6 +126,13 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     setSelectedLevels(newLevels);
   };
 
+  const toggleGuide = (guide: string) => {
+    const newGuides = selectedGuides.includes(guide)
+      ? selectedGuides.filter(g => g !== guide)
+      : [...selectedGuides, guide];
+    setSelectedGuides(newGuides);
+  };
+
   const getAppliedFiltersText = () => {
     const filterParts = [];
     
@@ -103,6 +142,14 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
     
     if (selectedLevels.length > 0) {
       filterParts.push(`Level: ${selectedLevels.join(', ')}`);
+    }
+
+    if (premiumFilter !== null) {
+      filterParts.push(`Content: ${premiumFilter ? 'Premium' : 'Free'}`);
+    }
+
+    if (selectedGuides.length > 0) {
+      filterParts.push(`Guide: ${selectedGuides.join(', ')}`);
     }
     
     const baseText = filterParts.length === 0 
@@ -198,6 +245,10 @@ const VideoList: React.FC<VideoListProps> = ({ onSelectVideo, onBack }) => {
         setSortOption={setSortOption}
         selectedLevels={selectedLevels}
         toggleLevel={toggleLevel}
+        premiumFilter={premiumFilter}
+        setPremiumFilter={setPremiumFilter}
+        selectedGuides={selectedGuides}
+        toggleGuide={toggleGuide}
       />
     </View>
   );

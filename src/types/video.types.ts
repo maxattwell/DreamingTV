@@ -11,6 +11,7 @@ export interface DSVideo {
   publishedAt?: string;
   tags?: string[];
   seriesId?: string;
+  guides?: string[];
 }
 
 export interface VideoSources {
